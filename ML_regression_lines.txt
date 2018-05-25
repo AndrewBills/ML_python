@@ -1,0 +1,119 @@
+# -*- coding: utf-8 -*-
+"""
+Spyder Editor
+
+This is a temporary script file.
+Features: open high low close volume Ex-Divided
+This python program pulls stock data from quandl and output that data to you in
+a nice organize format that can be seen below.
+
+
+Part 1
+Output: Of the first half of the program that displays all the features of the 
+machine learning / regression program we are developing
+          Adj. Close    HL_PCT  PCT_change  Adj. Volume
+Date                                                     
+2004-08-19   50.322842  3.712563    0.324968   44659000.0
+2004-08-20   54.322689  0.710922    7.227007   22834300.0
+2004-08-23   54.869377  3.729433   -1.227880   18256100.0
+2004-08-24   52.597363  6.417469   -5.726357   15247300.0
+2004-08-25   53.164113  1.886792    1.183658    9188600.0
+
+Part 2
+Output: notice the extra label colume that was created
+            Adj. Close    HL_PCT  PCT_change  Adj. Volume       label
+Date                                                                 
+2004-08-19   50.322842  3.712563    0.324968   44659000.0  214.005615
+2004-08-20   54.322689  0.710922    7.227007   22834300.0  210.725489
+2004-08-23   54.869377  3.729433   -1.227880   18256100.0  208.072299
+2004-08-24   52.597363  6.417469   -5.726357   15247300.0  218.288837
+2004-08-25   53.164113  1.886792    1.183658    9188600.0  223.309335
+
+
+part 3
+output:
+            Adj. Close    HL_PCT  PCT_change  Adj. Volume    label
+Date                                                              
+2016-11-04      781.10  0.944821    1.270582    1970603.0  1094.00
+2016-11-07      802.03  0.370310    0.890622    1992570.0  1053.15
+2016-11-08      811.98  0.500012    1.240602    1769069.0  1026.55
+2016-11-09      805.59  0.759692    0.468927    3098510.0  1054.09
+2016-11-10      780.29  3.815248   -3.667901    5909609.0  1006.94
+
+
+the equation for a regression line is 
+
+Y=a+bx
+
+      (sumY)(SumX^2)-(sumX)(sum(X*Y))
+a = --------------------------------
+       n(sumX^2)-(sumX)^2
+
+      n(sum(X*Y)-(sumX)(sum(Y))
+b = --------------------------------
+       n(sumX^2)-(sumX)^2
+
+"""
+
+
+"""Part 1"""
+import pandas as pd 
+import quandl 
+import math
+import numpy as np #numpy helps us have arrays
+#---preproccinging lets us have scaling, scaling helps with processing speed. 
+#keeping things between 1 and -1
+#---cross_validation shufles your data and helps seperate your data 
+#---svm helps you do regression
+from sklearn import preprocessing, cross_validation, svm 
+from sklearn.linear_model import LinearRegression
+
+
+df = quandl.get('WIKI/GOOGL')
+#print(df.head)
+df = df[['Adj. Open','Adj. High','Adj. Low','Adj. Close','Adj. Volume',]]
+df['HL_PCT'] = (df['Adj. High'] - df['Adj. Close']) / df['Adj. Close']*100.0 
+df['PCT_change'] = (df['Adj. Close'] - df['Adj. Open']) / df['Adj. Open']*100
+
+df = df[['Adj. Close','HL_PCT','PCT_change','Adj. Volume']]
+
+#print(df.head())
+
+"""Part 2"""
+forecast_col = 'Adj. Close'
+df.fillna(-99999, inplace=True)
+
+forecast_out = int(math.ceil(0.1*len(df))) #printing out 10% of the data
+
+df['label'] = df[forecast_col].shift(-forecast_out)
+df.dropna(inplace=True)
+
+#print(df.head())
+"""Part 3"""
+#df.dropna(inplace=True)
+#print(df.tail())
+
+"""Part 4"""
+# defining our X and Y 
+X = np.array(df.drop(['label'],1))
+y = np.array(df['label'])
+# scalling the data and sacling allong side all your values
+X= preprocessing.scale(X)
+#X= X[:-forecast_out+1]
+
+#df.dropna(inplace=True)
+y=np.array(df['label'])
+#print(len(X), len(y))
+
+X_train, X_test, y_train, y_test = cross_validation.train_test_split(X,y, test_size=0.2)
+clf = LinearRegression()
+clf.fit(X_train,y_train)
+confidence = clf.score(X_test,y_test) # confidence can replaced with the word accuracy
+
+# not as accurate
+"""clf = svm.SVR()
+clf.fit(X_train,y_train)
+confidence = clf.score(X_test,y_test) # confidence can replaced with the word accuracy"""
+
+print(confidence)
+
